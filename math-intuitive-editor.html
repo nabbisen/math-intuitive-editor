@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Math</title>
+    <style>
+        html, html body {
+            margin: 0;
+        }
+        #app {
+            width: 100vw;
+        }
+        .math-editor {
+            width: 100%;
+            height: auto;
+            min-height: 3.0rem;
+            background: #eaeaea;
+            padding: 0.4rem 0.7rem;
+        }
+        .math-editor .row {
+            display: flex;
+        }
+        .math-editor .row.split {
+            flex-direction: column;
+        }
+        .math-editor .row > .col {
+            height: 1.0rem;
+            padding: 0.2rem 0.5rem;
+            background: #dadada;
+        }
+        .math-editor .row > .col.buf {
+            background: #eaeaea;
+        }
+        .math-editor .row > .col:focus {
+            background: #fefefe;
+        }
+        .math-editor + .nav-btns ul {
+            display: flex;
+            list-style: none;
+        }
+        .math-editor + .nav-btns ul li {
+            width: 2.0rem;
+            height: 2.0rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #4269e5;
+            color: #fefefe;
+            border-radius: 50%;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <h2>Math Editor</h2>
+        <div class="math-editor"></div>
+        <nav class="nav-btns">
+            <ul>
+                <li class="split-row">->-</li>
+                <li>(???)</li>
+            </ul>
+        </nav>
+    </div>
+    <script>
+        const get_math_editor = () => {
+            return document.querySelector('.math-editor');
+        };
+        const get_nav_btns = () => {
+            const math_editor = get_math_editor();
+            var sibling = math_editor.nextElementSibling;
+            while(true) {
+                if (sibling.classList.contains('nav-btns')) {
+                    return sibling;
+                }
+                sibling = sibling.nextElementSibling;
+                if (!sibling) {
+                    return;
+                }
+            }
+        };
+        var active_math_editor_col;
+        const math_editor_col_click = (e) => {
+            active_math_editor_col = e.currentTarget;
+        };
+        const math_editor_buf_col_input = (e) => {
+            if (e.currentTarget.classList.contains('buf')) {
+                e.currentTarget.classList.remove('buf');
+                e.currentTarget.parentNode.appendChild(create_buf_col());
+            }
+        };
+        const create_col = () => {
+            var col = document.createElement('div');
+            col.classList.add('col');
+            col.contentEditable = 'true';
+            col.addEventListener('click', math_editor_col_click)
+            return col;
+        };
+        const create_buf_col = () => {
+            var col = create_col();
+            col.classList.add('buf');
+            col.addEventListener('input', math_editor_buf_col_input)
+            return col;
+        };
+        const get_init_row = () => {
+            var init_row = document.createElement('div');
+            init_row.classList.add('row');
+            init_row.appendChild(create_buf_col());
+            return init_row;
+        }
+        // todo: split (1) division as double rows (2) sigma / integral symbol as inside current row
+        const split_row = (e) => {
+            if (!active_math_editor_col) {
+                return false;
+            }
+            
+            var above_row = document.createElement('div');
+            above_row.classList.add('row');
+            const above_row_col = active_math_editor_col.cloneNode(true);
+            above_row.appendChild(above_row_col);
+            var below_row = document.createElement('div');
+            below_row.classList.add('row');
+            var below_row_col = create_col();
+            // todo: minWidth works with each other dynamically
+            below_row_col.style.minWidth = active_math_editor_col.offsetWidth + 'px';
+            below_row.appendChild(below_row_col);
+            
+            var rows_container = document.createElement('div');
+            rows_container.classList.add('row');
+            rows_container.classList.add('split');
+            rows_container.appendChild(above_row);
+            rows_container.appendChild(below_row);
+
+            active_math_editor_col.parentNode.replaceChild(rows_container, active_math_editor_col);
+
+            if (rows_container.parentNode.querySelector('.col.buf')) {
+                rows_container.parentNode.appendChild(create_buf_col());
+            }
+            
+            active_math_editor_col = above_row_col;
+        }
+        const math_editor_click = (e) => {
+            if (e.currentTarget === get_math_editor()) {
+                if (!e.currentTarget.querySelector('.row')) {
+                    const init_row = get_init_row();
+                    e.currentTarget.appendChild(init_row);
+                    init_row.click();
+                }
+            }
+        };
+        const prepare_math_editor = () => {
+            var math_editor = get_math_editor();
+            math_editor.addEventListener('click', math_editor_click);
+            const nav_btns = get_nav_btns();
+            nav_btns.querySelector('.split-row').addEventListener('click', split_row);
+        };
+        const dom_content_loaded = () => {
+            prepare_math_editor();
+        };
+        document.addEventListener('DOMContentLoaded', dom_content_loaded);
+    </script>
+</body>
+</html>
